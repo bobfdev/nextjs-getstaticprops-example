@@ -18,11 +18,7 @@ export default function ProductDetailPage(props) {
     );
 }
 
-export async function getStaticProps(context) {
-    const { params } = context;
-
-    const productId = params.productid;
-
+async function getData() {
     // data because the data folder is the location of data we are looking for
     // dummy-data.json is the file we need to use for this path
     const filePath = path.join(process.cwd(), 'data', 'dummy-data.json');
@@ -30,7 +26,21 @@ export async function getStaticProps(context) {
     // JSON.parse converts the jsonData into a regular javascript object
     const data = JSON.parse(jsonData);
 
+    return data;
+}
+
+export async function getStaticProps(context) {
+    const { params } = context;
+
+    const productId = params.productid;
+
+    const data = await getData();
+
     const product = data.products.find(product => product.id === productId);
+
+    if (!product) {
+        return { notFound: true };
+    }
 
     return {
         props: {
@@ -40,14 +50,21 @@ export async function getStaticProps(context) {
 }
 
 export async function getStaticPaths() {
+    const data = await getData();
+
+    const ids = data.products.map((product) => product.id);
+
+    const pathsWithParams = ids.map((id) => ({ params: { productid: id } }));
+
     return {
-        paths: [
-            { params: { productid: 'p1' } },
-            { params: { productid: 'p2' } },
-            { params: { productid: 'p3' } },
-            { params: { productid: 'p4' } },
-        ],
-        fallback: false
+        paths: pathsWithParams,
+        // paths: [
+        //     { params: { productid: 'p1' } },
+        //     { params: { productid: 'p2' } },
+        //     { params: { productid: 'p3' } },
+        //     { params: { productid: 'p4' } },
+        // ],
+        fallback: true
         // paths: [
         //     { params: { productid: 'p1' } },
         // ],
